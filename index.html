@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="strict-origin-when-cross-origin"><title>TangoDJ · Tandas & Cortinas</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><span class="eyebrow">A LISTENING SESSION</span><h1>TangoDJ<span> / </span>Tandas & Cortinas</h1><div class="orchestra-picker"><label for="orchestra">Choose your orchestra</label><select id="orchestra"><option value="troilo">Aníbal Troilo</option><option value="canaro">Francisco Canaro</option></select></div><p id="session-description"></p><p id="session-count"></p></header>
+<main><section class="stage"><div id="player-shell"><div id="player"></div></div><div class="now"><span id="kind" class="eyebrow">READY WHEN YOU ARE</span><h2 id="title">Yo soy el tango</h2><p id="artist">1941 · Francisco Fiorentino</p><p id="status" role="status" aria-live="polite">Connecting to YouTube…</p><div class="progress"><div id="progress"></div></div><div class="time"><span id="elapsed">0:00</span><span id="duration">—</span></div><div class="controls"><button id="previous" aria-label="Previous track">←</button><button id="play" class="primary" disabled>Play session</button><button id="next" aria-label="Next track">→</button><label class="volume">Volume <input id="volume" aria-label="Volume" type="range" min="0" max="100" value="70"></label></div><div id="upnext"></div></div><p class="note">Keep this tab open and your device awake. YouTube ads, buffering, and background tab limits can interrupt transitions.</p></section>
+<section class="setlist"><div class="section-title"><h2>The session</h2><span id="selection-count"></span></div><div id="queue"></div></section>
+</main>
+<footer><a id="youtube-playlist" href="https://www.youtube.com/playlist?list=PLH8G31ySbHyY" target="_blank" rel="noopener">Open this orchestra on YouTube ↗</a><span>Cortinas play for 20 seconds, with a gentle fade in the final two seconds.</span></footer>
+<script type="module" src="app.js"></script>
+</body></html>
