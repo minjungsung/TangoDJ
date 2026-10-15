@@ -3,7 +3,7 @@ const $=id=>document.getElementById(id);
 let offsets={};try{offsets=JSON.parse(localStorage.getItem('tangodj-cortina-offsets')||'{}');}catch{}
 let sessionId=new URLSearchParams(location.search).get('orchestra')==='canaro'?'canaro':'troilo';
 if(!sessions[sessionId].tandas.length)sessionId='troilo';
-let queue=buildQueue(sessionId,offsets),index=0,player,ready=false,started=false,finished=false,volume=70;
+let queue=buildQueue(sessionId,offsets),index=0,player,ready=false,started=false,finished=false,volume=70,playbackArmed=false;
 const format=s=>`${Math.floor(Math.max(0,s)/60)}:${String(Math.floor(Math.max(0,s)%60)).padStart(2,'0')}`;
 function matches(){try{return new URL(player.getVideoUrl()).searchParams.get('v')===queue[index].id;}catch{return false;}}
 function render(){
@@ -46,11 +46,11 @@ function update(){
 }
 function select(i){
  if(!ready){$('status').textContent='Wait for the YouTube player to connect, then press Play.';return;}
- index=Math.max(0,Math.min(queue.length-1,i));started=true;finished=false;update();$('status').textContent='Loading…';
+ playbackArmed=false;index=Math.max(0,Math.min(queue.length-1,i));started=true;finished=false;update();$('status').textContent='Loading…';
  const t=queue[index];player.setVolume(volume);const spec={videoId:t.id,startSeconds:t.start};if(t.end!==undefined)spec.endSeconds=t.end;player.loadVideoById(spec);
 }
 $('orchestra').addEventListener('change',e=>{if(ready)player.pauseVideo();sessionId=e.target.value;queue=buildQueue(sessionId,offsets);index=0;started=false;finished=false;const url=new URL(location.href);url.searchParams.set('orchestra',sessionId);history.replaceState(null,'',url);render();$('play').textContent='Play session';$('status').textContent='Press Play session to start this orchestra.';});
-function advance(){if(index<queue.length-1)select(index+1);else{finished=true;player.pauseVideo();$('play').textContent='Replay session';$('status').textContent='Session complete.';}}
+function advance(){if(!playbackArmed)return;playbackArmed=false;if(index<queue.length-1)select(index+1);else{finished=true;player.pauseVideo();$('play').textContent='Replay session';$('status').textContent='Session complete.';}}
 $('play').addEventListener('click',()=>{if(!ready)return;if(finished){select(0);return;}if(!started){select(index);return;}if(player.getPlayerState()===YT.PlayerState.PLAYING)player.pauseVideo();else player.playVideo();});
 $('previous').addEventListener('click',()=>select(index-1));$('next').addEventListener('click',()=>select(index+1));
 $('volume').addEventListener('input',e=>{volume=Number(e.target.value);if(ready)player.setVolume(volume);});
@@ -59,8 +59,8 @@ window.onYouTubeIframeAPIReady=()=>{
   onReady:()=>{ready=true;player.setVolume(volume);$('play').disabled=false;$('status').textContent='Press Play session. The 20-second cortinas run automatically between tandas.';update();},
   onStateChange:event=>{
    if(!matches()||finished||!started)return;
-   if(event.data===YT.PlayerState.ENDED&&started){advance();return;}
-   if(event.data===YT.PlayerState.PLAYING){$('play').textContent='Pause';$('status').textContent=queue[index].kind==='cortina'?'Clear the floor. The next tanda starts after this 20-second highlight.':'Playing the full recording.';}
+   if(event.data===YT.PlayerState.ENDED&&started&&playbackArmed&&player.getPlayerState()===YT.PlayerState.ENDED){advance();return;}
+   if(event.data===YT.PlayerState.PLAYING){playbackArmed=true;$('play').textContent='Pause';$('status').textContent=queue[index].kind==='cortina'?'Clear the floor. The next tanda starts after this 20-second highlight.':'Playing the full recording.';}
    else if(event.data===YT.PlayerState.PAUSED){$('play').textContent='Resume';$('status').textContent='Paused.';}
    else if(event.data===YT.PlayerState.BUFFERING){$('status').textContent='Buffering…';}
   },
@@ -73,6 +73,6 @@ setInterval(()=>{
  const t=queue[index],time=player.getCurrentTime(),duration=t.kind==='cortina'?20:player.getDuration();
  const elapsed=t.kind==='cortina'?Math.max(0,time-t.start):time;
  $('elapsed').textContent=format(elapsed);$('duration').textContent=duration?format(duration):'—';$('progress').style.width=`${duration?Math.min(100,elapsed/duration*100):0}%`;
- if(player.getPlayerState()===YT.PlayerState.PLAYING){player.setVolume(fadeVolume(t,time,volume));if(t.kind==='cortina'&&time>=t.end)advance();}
+ if(player.getPlayerState()===YT.PlayerState.PLAYING){player.setVolume(fadeVolume(t,time,volume));if(playbackArmed&&t.kind==='cortina'&&time>=t.end)advance();}
 },100);
 render();const api=document.createElement('script');api.src='https://www.youtube.com/iframe_api';api.onerror=()=>{$('status').textContent='Cannot connect to YouTube. Check your connection and reload.';};document.head.append(api);
